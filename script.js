@@ -248,100 +248,7 @@ window.closeModal = () => { sfx.back(); modal.classList.remove('open'); };
 window.setMode = (mode) => { sfx.click(); modalMode = mode; const d = document.getElementById('form-direct-area'); const s = document.getElementById('form-sector-area'); if(mode==='direct'){d.classList.remove('hidden');s.classList.add('hidden');}else{d.classList.add('hidden');s.classList.remove('hidden');} };
 window.addVideoRow = (cId) => { sfx.click(); const d = document.createElement('div'); d.className='v-row'; d.innerHTML=`<input type="text" class="v-title" placeholder="Title"><input type="text" class="v-url" placeholder="URL"><input type="text" class="v-dur" placeholder="10:00" style="width:70px"><button class="btn-icon-only" onclick="this.parentElement.remove();sfx.back()"><i class="ri-close-line"></i></button>`; document.getElementById(cId).appendChild(d); };
 window.addSectorBlock = () => { sfx.click(); const c = document.getElementById('sector-inputs-container'); const id = 'sec_'+Date.now(); const b = document.createElement('div'); b.className='sector-block'; b.innerHTML=`<div class="sector-header-row"><input type="text" class="sector-input sector-title-val" placeholder="Sector Name"><button class="btn-delete-sector" onclick="this.closest('.sector-block').remove();sfx.back()"><i class="ri-delete-bin-2-line"></i></button></div><div class="sector-video-list" id="vlist_${id}"></div><button class="btn-add-vid-small" onclick="addVideoRow('vlist_${id}')">+ Add Video</button>`; c.appendChild(b); addVideoRow(`vlist_${id}`); };
-// --- FIX: LOGIC SAVE NEW COURSE ---
-window.saveNewCourse = () => {
-    // 1. Ambil data utama dari Input
-    const titleInput = document.getElementById('new-title').value;
-    const imgInput = document.getElementById('new-image').value;
-    const descInput = document.getElementById('new-desc').value;
-
-    // Validasi sederhana: Judul wajib ada
-    if (!titleInput) {
-        alert("CRITICAL ERROR: Operation Title Required!");
-        sfx.denied();
-        return;
-    }
-
-    // 2. Buat Object Course Baru
-    const newId = Date.now(); // Gunakan timestamp sebagai ID unik
-    let newCourse = {
-        id: newId,
-        title: titleInput,
-        image: imgInput || 'https://via.placeholder.com/300?text=NO+IMG', // Placeholder jika gambar kosong
-        description: descInput || 'No briefing available.',
-        subCourses: [],
-        modules: []
-    };
-
-    // 3. Cek Mode: Direct (Single List) atau Sector (Multi Folder)
-    if (modalMode === 'direct') {
-        // --- MODE DIRECT ---
-        // Ambil semua baris input video di area direct
-        const rows = document.querySelectorAll('#video-inputs-container .v-row');
-        
-        rows.forEach((row, index) => {
-            const vTitle = row.querySelector('.v-title').value;
-            const vUrl = row.querySelector('.v-url').value;
-            const vDur = row.querySelector('.v-dur').value;
-
-            if (vTitle && vUrl) { // Hanya masukkan jika ada judul & link
-                newCourse.modules.push({
-                    id: `v_${newId}_${index}`,
-                    title: vTitle,
-                    url: vUrl,
-                    duration: vDur || "00:00"
-                });
-            }
-        });
-
-    } else {
-        // --- MODE SECTOR ---
-        // Ambil semua blok sector
-        const sectors = document.querySelectorAll('#sector-inputs-container .sector-block');
-        
-        sectors.forEach((sec, sIndex) => {
-            const secTitle = sec.querySelector('.sector-title-val').value || `Sector ${sIndex + 1}`;
-            
-            // Siapkan object sub-course
-            let subCourseObj = {
-                id: `s_${newId}_${sIndex}`,
-                title: secTitle,
-                image: imgInput, // Gunakan gambar utama untuk sub-course juga
-                modules: []
-            };
-
-            // Cari video di dalam sector ini
-            const vRows = sec.querySelectorAll('.v-row');
-            vRows.forEach((row, vIndex) => {
-                const vTitle = row.querySelector('.v-title').value;
-                const vUrl = row.querySelector('.v-url').value;
-                const vDur = row.querySelector('.v-dur').value;
-
-                if (vTitle && vUrl) {
-                    subCourseObj.modules.push({
-                        id: `v_${newId}_${sIndex}_${vIndex}`,
-                        title: vTitle,
-                        url: vUrl,
-                        duration: vDur || "00:00"
-                    });
-                }
-            });
-
-            newCourse.subCourses.push(subCourseObj);
-        });
-    }
-
-    // 4. Simpan ke Array Utama
-    courses.push(newCourse);
-
-    // 5. Simpan ke LocalStorage (Agar tidak hilang saat refresh)
-    saveData();
-
-    // 6. Refresh Tampilan Home & Tutup Modal
-    sfx.boot_complete(); // Suara sukses
-    renderHome();        // Update UI
-    closeModal();        // Tutup popup
-};
+window.saveNewCourse = () => { sfx.boot_complete(); closeModal(); renderHome(); }; 
 window.deleteCourse = (id,e) => { e.stopPropagation(); sfx.denied(); if(confirm("Confirm Delete?")) { courses = courses.filter(c => c.id !== id); saveData(); renderHome(); } };
 
 window.requestOverride = () => {
@@ -432,6 +339,5 @@ if (canvas) {
     function loop() { ctxCanvas.clearRect(0,0,w,h); particles.forEach(p=>{p.update();p.draw();}); requestAnimationFrame(loop); }
     window.addEventListener('resize', resize); resize(); for(let i=0;i<50;i++)particles.push(new P()); loop();
 }
-
 
 init();
